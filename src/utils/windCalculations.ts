@@ -37,7 +37,7 @@ export const estimateWindAtHeight = (
   referenceSpeed: number,
   referenceHeight: number = 10,
   targetHeight: number,
-  alpha: number = 1/7
+  alpha: number = 1/5
 ): number => {
   return referenceSpeed * Math.pow(targetHeight / referenceHeight, alpha);
 };
