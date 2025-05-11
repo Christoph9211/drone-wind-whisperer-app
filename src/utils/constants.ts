@@ -11,4 +11,5 @@ export const MAX_SAFE_WIND = 11.0; // m/s
 export const MAX_SAFE_GUST = 12.0; // m/s
 
 // Heights to analyze
-export const ANALYSIS_HEIGHTS = [10, 50, 80, 100]; // in meters
+export const ANALYSIS_HEIGHTS = [10, 20, 50, 80, 100, 120]; // in meters
+

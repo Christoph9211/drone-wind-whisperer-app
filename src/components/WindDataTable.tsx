@@ -71,9 +71,11 @@ const WindDataTable = ({ windData }: WindDataTableProps) => {
             <TableRow>
               <TableHead>Time</TableHead>
               <TableHead>10m Wind</TableHead>
+              <TableHead>20m Wind</TableHead>
               <TableHead>50m Wind</TableHead>
               <TableHead>80m Wind</TableHead>
               <TableHead>100m Wind</TableHead>
+              <TableHead>120m Wind</TableHead>
               <TableHead>Gusts</TableHead>
               <TableHead>Safety</TableHead>
             </TableRow>
@@ -82,18 +84,22 @@ const WindDataTable = ({ windData }: WindDataTableProps) => {
             {currentData.map((data, index) => {
               // Calculate wind at different heights
               const baseWind = data.windSpeed;
+              const wind20m = estimateWindAtHeight(baseWind, 10, 20);
               const wind50m = estimateWindAtHeight(baseWind, 10, 50);
               const wind80m = estimateWindAtHeight(baseWind, 10, 80);
               const wind100m = estimateWindAtHeight(baseWind, 10, 100);
+              const wind120m = estimateWindAtHeight(baseWind, 10, 120);
               
               // Check safety at each height
               const safe10m = isSafeForDrones(baseWind, data.windGust);
+              const safe20m = isSafeForDrones(wind20m, data.windGust);
               const safe50m = isSafeForDrones(wind50m, data.windGust);
               const safe80m = isSafeForDrones(wind80m, data.windGust);
               const safe100m = isSafeForDrones(wind100m, data.windGust);
+              const safe120m = isSafeForDrones(wind120m, data.windGust);
               
               // Overall safety
-              const isOverallSafe = safe10m && safe50m && safe80m && safe100m;
+              const isOverallSafe = safe10m && safe20m && safe50m && safe80m && safe100m && safe120m;
               
               return (
                 <TableRow key={index}>
@@ -103,6 +109,10 @@ const WindDataTable = ({ windData }: WindDataTableProps) => {
                   <TableCell>
                     {formatWindSpeed(baseWind)}
                     {!safe10m && <span className="text-red-500 ml-1">❌</span>}
+                  </TableCell>
+                  <TableCell>
+                    {formatWindSpeed(wind20m)}
+                    {!safe20m && <span className="text-red-500 ml-1">❌</span>}
                   </TableCell>
                   <TableCell>
                     {formatWindSpeed(wind50m)}
@@ -115,6 +125,10 @@ const WindDataTable = ({ windData }: WindDataTableProps) => {
                   <TableCell>
                     {formatWindSpeed(wind100m)}
                     {!safe100m && <span className="text-red-500 ml-1">❌</span>}
+                  </TableCell>
+                  <TableCell>
+                    {formatWindSpeed(wind120m)}
+                    {!safe120m && <span className="text-red-500 ml-1">❌</span>}
                   </TableCell>
                   <TableCell>
                     {data.windGust 
@@ -135,7 +149,7 @@ const WindDataTable = ({ windData }: WindDataTableProps) => {
             
             {currentData.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-4">
+                <TableCell colSpan={9} className="text-center py-4">
                   No data available for this date
                 </TableCell>
               </TableRow>

@@ -7,9 +7,11 @@ import { MAX_SAFE_WIND, MAX_SAFE_GUST, estimateWindAtHeight, msToMph } from '@/u
 interface WindChartData {
   time: string;
   wind10m: number;
+  wind20m: number;
   wind50m: number;
   wind80m: number;
   wind100m: number;
+  wind120m: number;
   gust?: number;
 }
 
@@ -25,9 +27,11 @@ const WindSpeedChart = ({ windData, showMph = false }: WindSpeedChartProps) => {
   const chartData: WindChartData[] = windData.map(data => {
     // Calculate estimated wind speeds at different altitudes
     const baseSpeed = data.windSpeed;
+    const speed20m = estimateWindAtHeight(baseSpeed, 10, 20);
     const speed50m = estimateWindAtHeight(baseSpeed, 10, 50);
     const speed80m = estimateWindAtHeight(baseSpeed, 10, 80);
     const speed100m = estimateWindAtHeight(baseSpeed, 10, 100);
+    const speed120m = estimateWindAtHeight(baseSpeed, 10, 120);
     
     // Convert if needed
     const conversionFactor = showMph ? 1 / 0.44704 : 1;
@@ -35,9 +39,11 @@ const WindSpeedChart = ({ windData, showMph = false }: WindSpeedChartProps) => {
     return {
       time: data.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       wind10m: baseSpeed * conversionFactor,
+      wind20m: speed20m * conversionFactor,
       wind50m: speed50m * conversionFactor,
       wind80m: speed80m * conversionFactor,
       wind100m: speed100m * conversionFactor,
+      wind120m: speed120m * conversionFactor,
       gust: data.windGust ? data.windGust * conversionFactor : undefined
     };
   });
@@ -105,6 +111,13 @@ const WindSpeedChart = ({ windData, showMph = false }: WindSpeedChartProps) => {
             />
             <Line 
               type="monotone" 
+              dataKey="wind20m" 
+              name="20m Height" 
+              stroke="#4CAF50" 
+              activeDot={{ r: 8 }} 
+            />
+            <Line 
+              type="monotone" 
               dataKey="wind50m" 
               name="50m Height" 
               stroke="#82ca9d" 
@@ -122,6 +135,13 @@ const WindSpeedChart = ({ windData, showMph = false }: WindSpeedChartProps) => {
               dataKey="wind100m" 
               name="100m Height" 
               stroke="#ff8042" 
+              activeDot={{ r: 8 }} 
+            />
+            <Line 
+              type="monotone" 
+              dataKey="wind120m" 
+              name="120m Height" 
+              stroke="#9c27b0" 
               activeDot={{ r: 8 }} 
             />
             

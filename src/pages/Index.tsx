@@ -148,7 +148,7 @@ const DroneWindAnalysis = () => {
                 <ul className="space-y-2">
                   <li className="flex justify-between">
                     <span>Analysis Heights:</span>
-                    <span className="font-medium">10m, 50m, 80m, 100m</span>
+                    <span className="font-medium">10m, 20m, 50m, 80m, 100m, 120m</span>
                   </li>
                   <li className="flex justify-between">
                     <span>Wind Model:</span>
