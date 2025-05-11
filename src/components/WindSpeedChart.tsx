@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { Sunset } from "lucide-react";
 import { WindData } from '@/utils/weatherApi';
 import { MAX_SAFE_WIND, MAX_SAFE_GUST, estimateWindAtHeight, msToMph } from '@/utils/windCalculations';
 
@@ -14,7 +13,6 @@ interface WindChartData {
   wind100m: number;
   wind120m: number;
   gust?: number;
-  isSunset?: boolean;
 }
 
 interface WindSpeedChartProps {
@@ -25,23 +23,8 @@ interface WindSpeedChartProps {
 const WindSpeedChart = ({ windData, showMph = false }: WindSpeedChartProps) => {
   const [showGusts, setShowGusts] = useState(true);
   
-  // Find sunset times - where isDaytime changes from true to false
-  const findSunsetIndices = () => {
-    const sunsetIndices: number[] = [];
-    
-    for (let i = 0; i < windData.length - 1; i++) {
-      if (windData[i].isDaytime && !windData[i + 1].isDaytime) {
-        sunsetIndices.push(i);
-      }
-    }
-    
-    return sunsetIndices;
-  };
-  
-  const sunsetIndices = findSunsetIndices();
-  
   // Transform wind data for chart
-  const chartData: WindChartData[] = windData.map((data, index) => {
+  const chartData: WindChartData[] = windData.map(data => {
     // Calculate estimated wind speeds at different altitudes
     const baseSpeed = data.windSpeed;
     const speed20m = estimateWindAtHeight(baseSpeed, 10, 20);
@@ -53,9 +36,6 @@ const WindSpeedChart = ({ windData, showMph = false }: WindSpeedChartProps) => {
     // Convert if needed
     const conversionFactor = showMph ? 1 / 0.44704 : 1;
     
-    // Check if this is a sunset point
-    const isSunset = sunsetIndices.includes(index);
-    
     return {
       time: data.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       wind10m: baseSpeed * conversionFactor,
@@ -64,8 +44,7 @@ const WindSpeedChart = ({ windData, showMph = false }: WindSpeedChartProps) => {
       wind80m: speed80m * conversionFactor,
       wind100m: speed100m * conversionFactor,
       wind120m: speed120m * conversionFactor,
-      gust: data.windGust ? data.windGust * conversionFactor : undefined,
-      isSunset
+      gust: data.windGust ? data.windGust * conversionFactor : undefined
     };
   });
   
@@ -76,34 +55,6 @@ const WindSpeedChart = ({ windData, showMph = false }: WindSpeedChartProps) => {
   // Format tooltip values
   const formatTooltipValue = (value: number) => {
     return `${value.toFixed(1)} ${showMph ? 'mph' : 'm/s'}`;
-  };
-  
-  // Custom tooltip component to show sunset indicator
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (!active || !payload || !payload.length) return null;
-    
-    const dataPoint = payload[0].payload;
-    
-    return (
-      <div className="bg-white p-3 border border-gray-200 shadow-md rounded-md">
-        <p className="font-medium">{label}</p>
-        {dataPoint.isSunset && (
-          <div className="flex items-center text-amber-600 mb-1">
-            <Sunset className="h-4 w-4 mr-1" />
-            <span>Sunset</span>
-          </div>
-        )}
-        {payload.map((entry: any) => (
-          <p 
-            key={entry.name} 
-            className="text-sm" 
-            style={{ color: entry.color }}
-          >
-            {entry.name}: {entry.value.toFixed(1)} {showMph ? 'mph' : 'm/s'}
-          </p>
-        ))}
-      </div>
-    );
   };
 
   return (
@@ -127,7 +78,10 @@ const WindSpeedChart = ({ windData, showMph = false }: WindSpeedChartProps) => {
                 position: 'insideLeft' 
               }}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip 
+              formatter={(value: number) => formatTooltipValue(value)}
+              labelFormatter={(label) => `Time: ${label}`}
+            />
             <Legend />
             
             {/* Reference line for safety threshold */}
@@ -146,26 +100,6 @@ const WindSpeedChart = ({ windData, showMph = false }: WindSpeedChartProps) => {
                 strokeDasharray="3 3" 
               />
             )}
-            
-            {/* Sunset reference lines */}
-            {sunsetIndices.map((idx) => {
-              const time = windData[idx].timestamp.toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              });
-              return (
-                <ReferenceLine 
-                  key={`sunset-${idx}`}
-                  x={time}
-                  stroke="orange"
-                  label={{ 
-                    value: "Sunset", 
-                    position: "top", 
-                    fill: "orange" 
-                  }}
-                />
-              );
-            })}
             
             {/* Wind speed lines */}
             <Line 

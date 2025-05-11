@@ -3,20 +3,13 @@ import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/sonner";
-import { Sunset } from "lucide-react";
 import WindSpeedChart from '@/components/WindSpeedChart';
 import WindDataTable from '@/components/WindDataTable';
 import LocationInput from '@/components/LocationInput';
 import SafetyIndicator from '@/components/SafetyIndicator';
 import ErrorDisplay from '@/components/ErrorDisplay';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { 
-  fetchNWSForecast, 
-  filterDaylightHours, 
-  generateMockWindData, 
-  WindData,
-  calculateSunset 
-} from '@/utils/weatherApi';
+import { fetchNWSForecast, filterDaylightHours, generateMockWindData, WindData } from '@/utils/weatherApi';
 import { DEFAULT_LOCATION } from '@/utils/constants';
 
 const DroneWindAnalysis = () => {
@@ -28,14 +21,6 @@ const DroneWindAnalysis = () => {
     longitude: DEFAULT_LOCATION.longitude
   });
   const [showMph, setShowMph] = useState(false);
-  const [sunsetTime, setSunsetTime] = useState<Date | null>(null);
-  
-  // Calculate sunset time
-  useEffect(() => {
-    const today = new Date();
-    const sunset = calculateSunset(today, location.latitude, location.longitude);
-    setSunsetTime(sunset);
-  }, [location]);
   
   // Fetch wind data
   const fetchWindData = async () => {
@@ -43,7 +28,7 @@ const DroneWindAnalysis = () => {
     setError(null);
     try {
       const data = await fetchNWSForecast(location.latitude, location.longitude);
-      const filteredData = filterDaylightHours(data, location.latitude, location.longitude);
+      const filteredData = filterDaylightHours(data);
       setWindData(filteredData);
       toast.success("Wind data fetched successfully!");
     } catch (err) {
@@ -51,8 +36,8 @@ const DroneWindAnalysis = () => {
       setError(err as Error);
       toast.error("Failed to fetch wind data. Using mock data instead.");
       // Use mock data as fallback
-      const mockData = generateMockWindData(location.latitude, location.longitude);
-      const filteredMockData = filterDaylightHours(mockData, location.latitude, location.longitude);
+      const mockData = generateMockWindData();
+      const filteredMockData = filterDaylightHours(mockData);
       setWindData(filteredMockData);
     } finally {
       setLoading(false);
@@ -172,16 +157,6 @@ const DroneWindAnalysis = () => {
                   <li className="flex justify-between">
                     <span>Data Source:</span>
                     <span className="font-medium">NWS API</span>
-                  </li>
-                  <li className="flex justify-between items-center">
-                    <span>Today's Sunset:</span>
-                    <span className="font-medium flex items-center">
-                      <Sunset className="h-4 w-4 mr-1 text-amber-500" />
-                      {sunsetTime ? sunsetTime.toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      }) : 'Calculating...'}
-                    </span>
                   </li>
                 </ul>
               </div>

@@ -9,7 +9,6 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Sunset } from "lucide-react";
 import { WindData } from '@/utils/weatherApi';
 import { 
   MAX_SAFE_WIND, 
@@ -29,40 +28,6 @@ const WindDataTable = ({ windData }: WindDataTableProps) => {
     return date.toLocaleDateString();
   };
   
-  // Calculate sunset times for each date in data
-  const getSunsetTimes = () => {
-    const dates = [...new Set(windData.map(data => getDateString(data.timestamp)))];
-    const dateObjects = dates.map(date => new Date(date));
-    
-    // For each date, find the last entry which has isDaytime=true
-    const sunsets = dateObjects.map(date => {
-      const sameDay = windData.filter(data => 
-        getDateString(data.timestamp) === getDateString(date)
-      );
-      
-      // Find the last daytime entry or the first nighttime entry
-      const daytimeEntries = sameDay.filter(data => data.isDaytime);
-      const nightTimeEntries = sameDay.filter(data => !data.isDaytime);
-      
-      if (daytimeEntries.length === 0) {
-        return null; // No daytime entries for this date
-      }
-      
-      if (nightTimeEntries.length === 0) {
-        return daytimeEntries[daytimeEntries.length - 1].timestamp; // All daytime entries
-      }
-      
-      // Get the last daytime entry
-      const lastDaytime = daytimeEntries[daytimeEntries.length - 1];
-      
-      return lastDaytime.timestamp;
-    });
-    
-    return sunsets.filter(Boolean).map(date => getDateString(date as Date));
-  };
-  
-  const sunsetDates = getSunsetTimes();
-  
   const groupedData = windData.reduce((acc, data) => {
     const dateKey = getDateString(data.timestamp);
     if (!acc[dateKey]) {
@@ -77,12 +42,6 @@ const WindDataTable = ({ windData }: WindDataTableProps) => {
   const [selectedDate, setSelectedDate] = useState(dates[0]);
   
   const currentData = groupedData[selectedDate] || [];
-
-  // Determine if a row represents sunset
-  const isSunsetRow = (data: WindData, index: number, dataArray: WindData[]) => {
-    if (index === dataArray.length - 1) return false;
-    return data.isDaytime && !dataArray[index + 1].isDaytime;
-  };
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md">
@@ -142,69 +101,49 @@ const WindDataTable = ({ windData }: WindDataTableProps) => {
               // Overall safety
               const isOverallSafe = safe10m && safe20m && safe50m && safe80m && safe100m && safe120m;
               
-              // Check if this is a sunset row
-              const isSunset = isSunsetRow(data, index, currentData);
-              
               return (
-                <>
-                  <TableRow key={index} className={isSunset ? "border-b-2 border-amber-300" : ""}>
-                    <TableCell>
-                      <div className="flex items-center">
-                        {data.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {isSunset && (
-                          <Sunset className="ml-2 h-4 w-4 text-amber-500" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {formatWindSpeed(baseWind)}
-                      {!safe10m && <span className="text-red-500 ml-1">❌</span>}
-                    </TableCell>
-                    <TableCell>
-                      {formatWindSpeed(wind20m)}
-                      {!safe20m && <span className="text-red-500 ml-1">❌</span>}
-                    </TableCell>
-                    <TableCell>
-                      {formatWindSpeed(wind50m)}
-                      {!safe50m && <span className="text-red-500 ml-1">❌</span>}
-                    </TableCell>
-                    <TableCell>
-                      {formatWindSpeed(wind80m)}
-                      {!safe80m && <span className="text-red-500 ml-1">❌</span>}
-                    </TableCell>
-                    <TableCell>
-                      {formatWindSpeed(wind100m)}
-                      {!safe100m && <span className="text-red-500 ml-1">❌</span>}
-                    </TableCell>
-                    <TableCell>
-                      {formatWindSpeed(wind120m)}
-                      {!safe120m && <span className="text-red-500 ml-1">❌</span>}
-                    </TableCell>
-                    <TableCell>
-                      {data.windGust 
-                        ? formatWindSpeed(data.windGust)
-                        : 'No data'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={isOverallSafe ? "outline" : "destructive"}
-                        className={isOverallSafe ? "bg-green-100 text-green-800 border-green-500" : ""}
-                      >
-                        {isOverallSafe ? "SAFE ✅" : "UNSAFE ❌"}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                  {isSunset && (
-                    <TableRow key={`sunset-${index}`} className="bg-amber-50">
-                      <TableCell colSpan={9} className="py-1 text-center text-amber-600 text-sm">
-                        <div className="flex items-center justify-center">
-                          <Sunset className="mr-2 h-4 w-4" />
-                          Sunset
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </>
+                <TableRow key={index}>
+                  <TableCell>
+                    {data.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </TableCell>
+                  <TableCell>
+                    {formatWindSpeed(baseWind)}
+                    {!safe10m && <span className="text-red-500 ml-1">❌</span>}
+                  </TableCell>
+                  <TableCell>
+                    {formatWindSpeed(wind20m)}
+                    {!safe20m && <span className="text-red-500 ml-1">❌</span>}
+                  </TableCell>
+                  <TableCell>
+                    {formatWindSpeed(wind50m)}
+                    {!safe50m && <span className="text-red-500 ml-1">❌</span>}
+                  </TableCell>
+                  <TableCell>
+                    {formatWindSpeed(wind80m)}
+                    {!safe80m && <span className="text-red-500 ml-1">❌</span>}
+                  </TableCell>
+                  <TableCell>
+                    {formatWindSpeed(wind100m)}
+                    {!safe100m && <span className="text-red-500 ml-1">❌</span>}
+                  </TableCell>
+                  <TableCell>
+                    {formatWindSpeed(wind120m)}
+                    {!safe120m && <span className="text-red-500 ml-1">❌</span>}
+                  </TableCell>
+                  <TableCell>
+                    {data.windGust 
+                      ? formatWindSpeed(data.windGust)
+                      : 'No data'}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={isOverallSafe ? "outline" : "destructive"}
+                      className={isOverallSafe ? "bg-green-100 text-green-800 border-green-500" : ""}
+                    >
+                      {isOverallSafe ? "SAFE ✅" : "UNSAFE ❌"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
               );
             })}
             
