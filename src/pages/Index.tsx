@@ -9,7 +9,7 @@ import LocationInput from '@/components/LocationInput';
 import SafetyIndicator from '@/components/SafetyIndicator';
 import ErrorDisplay from '@/components/ErrorDisplay';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { fetchNWSForecast, filterDaylightHours, generateMockWindData, WindData } from '@/utils/weatherApi';
+import { fetchNWSForecast, filterDaylightHours, WindData } from '@/utils/weatherApi';
 import { DEFAULT_LOCATION } from '@/utils/constants';
 
 const DroneWindAnalysis = () => {
@@ -34,11 +34,11 @@ const DroneWindAnalysis = () => {
     } catch (err) {
       console.error("Error fetching wind data:", err);
       setError(err as Error);
-      toast.error("Failed to fetch wind data. Using mock data instead.");
+      toast.error("Failed to fetch wind data.");
       // Use mock data as fallback
-      const mockData = generateMockWindData();
-      const filteredMockData = filterDaylightHours(mockData);
-      setWindData(filteredMockData);
+      //const mockData = generateMockWindData();
+      //const filteredMockData = filterDaylightHours(mockData);
+      //setWindData(filteredMockData);
     } finally {
       setLoading(false);
     }

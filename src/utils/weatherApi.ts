@@ -112,51 +112,21 @@ const getDirectionDegrees = (direction: string): number => {
 };
 
 /**
- * Check if a given time is during daylight hours
- * @param date Date object to check
- * @returns Boolean indicating if it's daytime
+ * Determine if a given time is during daylight hours
+ * @param {Date} date Date object to evaluate
+ * @returns {boolean} True if daytime, false otherwise
  */
 export const isDaylight = (date: Date): boolean => {
   const hour = date.getHours();
-  return hour >= 6 && hour < 20; // Simple approximation (6am to 8pm)
+  return hour >= 6 && hour <= 20; // 6am to 6pm
 };
 
 /**
- * Filter forecast data for daylight hours
- * @param windData Array of wind data points
- * @returns Filtered array with only daylight hours
+ * Filter wind data for daylight hours
+ * @param {WindData[]} windData Array of wind data points
+ * @returns {WindData[]} Filtered array with only daylight hours
  */
-export const filterDaylightHours = (windData: WindData[]): WindData[] => {
-  return windData.filter(data => data.isDaytime);
-};
+export const filterDaylightHours = (windData: WindData[]): WindData[] =>
+  windData.filter(({ isDaytime }) => isDaytime);
 
-/**
- * Generate mock data for testing when API is unavailable
- * @returns Array of mock WindData objects
- */
-export const generateMockWindData = (): WindData[] => {
-  const now = new Date();
-  const data: WindData[] = [];
-  
-  // Generate 48 hours of mock data
-  for (let i = 0; i < 48; i++) {
-    const timestamp = new Date(now);
-    timestamp.setHours(now.getHours() + i);
-    
-    const isDaytime = timestamp.getHours() >= 6 && timestamp.getHours() < 20;
-    
-    // Create some variation in wind speeds
-    const baseSpeed = 5 + Math.sin(i / 6) * 4 + Math.random() * 2;
-    const gustFactor = 1 + Math.random() * 0.5;
-    
-    data.push({
-      timestamp,
-      windSpeed: baseSpeed,
-      windDirection: (i * 15) % 360,
-      windGust: baseSpeed * gustFactor,
-      isDaytime
-    });
-  }
-  
-  return data;
-};
+
