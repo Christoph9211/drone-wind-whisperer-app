@@ -127,6 +127,7 @@ export const isDaylight = (date: Date): boolean => {
  * @returns {WindData[]} Filtered array with only daylight hours
  */
 export const filterDaylightHours = (windData: WindData[]): WindData[] =>
-  windData.filter(({ isDaytime }) => isDaytime);
+  windData.filter((data) => isDaylight(data.timestamp));
+
 
 
