@@ -118,7 +118,7 @@ const getDirectionDegrees = (direction: string): number => {
  */
 export const isDaylight = (date: Date): boolean => {
   const hour = date.getHours();
-  return hour >= 6 && hour <= 20; // 6am to 6pm
+  return hour >= 6 && hour <= 20; // 6am to 8pm
 };
 
 /**
