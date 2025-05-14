@@ -1,4 +1,5 @@
 
+
 import { mphToMs } from './windCalculations';
 
 // Constants for the API endpoint
@@ -30,6 +31,32 @@ interface NWSForecastPeriod {
 
 interface NWSHourlyForecast {
   periods: NWSForecastPeriod[];
+}
+
+interface NWSObservation {
+  properties: {
+    timestamp: string;
+    windSpeed: {
+      value: number | null;
+    };
+    windDirection: {
+      value: number | null;
+    };
+    windGust: {
+      value: number | null;
+    };
+  };
+}
+
+interface NWSStation {
+  properties: {
+    stationIdentifier: string;
+    name: string;
+    timeZone: string;
+    elevation: {
+      value: number;
+    };
+  };
 }
 
 /**
@@ -78,14 +105,13 @@ export const fetchNWSForecast = async (
     // Process forecast data
     const windData: WindData[] = periods.map((period: NWSForecastPeriod) => {
       const windSpeedMph = parseWindSpeed(period.windSpeed);
-      // TODO: Parse gust data if available in the future
       
       return {
         timestamp: new Date(period.startTime),
         windSpeed: mphToMs(windSpeedMph), // Convert to m/s
         windDirection: getDirectionDegrees(period.windDirection),
         windGust: undefined, // NWS API doesn't provide gust data in hourly forecast
-        isDaytime: period.isDaytime
+        isDaytime: isDaylight(new Date(period.startTime))
       };
     });
     
@@ -95,6 +121,131 @@ export const fetchNWSForecast = async (
     console.error('Error fetching NWS forecast:', error);
     throw error;
   }
+};
+
+/**
+ * Fetch observation stations near a location
+ * @param latitude Latitude coordinate
+ * @param longitude Longitude coordinate
+ * @returns Array of stations with their details
+ */
+export const fetchNearbyStations = async (
+  latitude = DEFAULT_LOCATION.latitude, 
+  longitude = DEFAULT_LOCATION.longitude
+): Promise<NWSStation[]> => {
+  try {
+    // Step 1: Get the grid points for the location
+    const pointResponse = await fetch(
+      `${NWS_API_BASE_URL}/points/${latitude},${longitude}`
+    );
+    
+    if (!pointResponse.ok) {
+      throw new Error(`NWS API error: ${pointResponse.status} ${pointResponse.statusText}`);
+    }
+    
+    const pointData = await pointResponse.json();
+    const { gridId, gridX, gridY } = pointData.properties;
+    
+    // Step 2: Get nearby observation stations
+    const stationsResponse = await fetch(
+      `${NWS_API_BASE_URL}/gridpoints/${gridId}/${gridX},${gridY}/stations`
+    );
+    
+    if (!stationsResponse.ok) {
+      throw new Error(`NWS API error: ${stationsResponse.status} ${stationsResponse.statusText}`);
+    }
+    
+    const stationsData = await stationsResponse.json();
+    return stationsData.features || [];
+    
+  } catch (error) {
+    console.error('Error fetching nearby stations:', error);
+    throw error;
+  }
+};
+
+/**
+ * Fetch observations from a specific station
+ * @param stationId Station identifier
+ * @returns Recent observations from the station
+ */
+export const fetchStationObservations = async (stationId: string): Promise<NWSObservation[]> => {
+  try {
+    const observationsResponse = await fetch(
+      `${NWS_API_BASE_URL}/stations/${stationId}/observations?limit=24`
+    );
+    
+    if (!observationsResponse.ok) {
+      throw new Error(`NWS API error: ${observationsResponse.status} ${observationsResponse.statusText}`);
+    }
+    
+    const observationsData = await observationsResponse.json();
+    return observationsData.features || [];
+    
+  } catch (error) {
+    console.error('Error fetching station observations:', error);
+    throw error;
+  }
+};
+
+/**
+ * Merge forecast data with observation data to include gust information
+ * @param forecastData Forecast wind data
+ * @param observationData Observation data which includes gusts
+ * @returns Enhanced wind data with gust information where available
+ */
+export const mergeWindDataWithObservations = (
+  forecastData: WindData[], 
+  observationData: NWSObservation[]
+): WindData[] => {
+  if (!observationData.length) return forecastData;
+  
+  const observationMap = new Map<string, number>();
+  
+  // Create a map of observations by hour
+  observationData.forEach(obs => {
+    if (obs.properties.windGust.value !== null) {
+      const timestamp = new Date(obs.properties.timestamp);
+      const hourKey = `${timestamp.getFullYear()}-${timestamp.getMonth()}-${timestamp.getDate()}-${timestamp.getHours()}`;
+      // Convert from m/s to our standard units (already in m/s from the API)
+      observationMap.set(hourKey, obs.properties.windGust.value);
+    }
+  });
+  
+  // Merge with forecast data
+  return forecastData.map(data => {
+    const timestamp = data.timestamp;
+    const hourKey = `${timestamp.getFullYear()}-${timestamp.getMonth()}-${timestamp.getDate()}-${timestamp.getHours()}`;
+    
+    if (observationMap.has(hourKey)) {
+      return {
+        ...data,
+        windGust: observationMap.get(hourKey)
+      };
+    }
+    
+    return data;
+  });
+};
+
+/**
+ * Estimate wind gusts based on steady wind speed
+ * @param windData Array of wind data points
+ * @returns Wind data with estimated gusts
+ */
+export const estimateWindGusts = (windData: WindData[]): WindData[] => {
+  return windData.map(data => {
+    if (data.windGust === undefined) {
+      // Simple estimation: gusts are typically 30-60% higher than steady wind
+      // We'll use a conservative 40% increase as default
+      const estimatedGust = data.windSpeed * 1.4;
+      return {
+        ...data,
+        windGust: estimatedGust
+      };
+    }
+    return data;
+  });
 };
 
 /**
@@ -129,5 +280,50 @@ export const isDaylight = (date: Date): boolean => {
 export const filterDaylightHours = (windData: WindData[]): WindData[] =>
   windData.filter((data) => isDaylight(data.timestamp));
 
-
+/**
+ * Generate mock wind data for testing
+ * @returns Array of mock wind data
+ */
+export const generateMockWindData = (): WindData[] => {
+  const data: WindData[] = [];
+  const now = new Date();
+  now.setMinutes(0, 0, 0); // Reset to the start of the hour
+  
+  // Generate 48 hours of data
+  for (let i = 0; i < 48; i++) {
+    const timestamp = new Date(now.getTime() + i * 60 * 60 * 1000);
+    const hour = timestamp.getHours();
+    
+    // Base wind speed varies by time of day (stronger during daytime)
+    let baseSpeed = 5 + Math.random() * 3; // 5-8 m/s base
+    if (hour >= 10 && hour <= 16) {
+      baseSpeed += 2; // Stronger during midday
+    }
+    
+    // Add some overall variability
+    baseSpeed += Math.sin(i / 4) * 2; // Sinusoidal pattern
+    
+    // Ensure we don't have negative wind speeds
+    baseSpeed = Math.max(baseSpeed, 1);
+    
+    // Sometimes exceed the safety threshold for testing
+    if (Math.random() > 0.8) {
+      baseSpeed *= 1.5;
+    }
+    
+    // Add gusts (30-60% higher than steady wind)
+    const gustFactor = 1.3 + Math.random() * 0.3;
+    const gustSpeed = baseSpeed * gustFactor;
+    
+    data.push({
+      timestamp,
+      windSpeed: baseSpeed,
+      windDirection: Math.floor(Math.random() * 360),
+      windGust: gustSpeed,
+      isDaytime: isDaylight(timestamp)
+    });
+  }
+  
+  return data;
+};
 
