@@ -115,7 +115,7 @@ export const useStationData = ({
           toast({
             title: "Using estimated gust data",
             description: "Error fetching station data. Using wind gust estimation algorithm.",
-            variant: "warning",
+            variant: "default",
           });
         }
       } finally {

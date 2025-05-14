@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback} from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -27,8 +27,8 @@ const DroneWindAnalysis = () => {
   const [useEstimation, setUseEstimation] = useState(true);
   const [useMockData, setUseMockData] = useState(false);
   
-  // Fetch wind data
-  const fetchWindData = async () => {
+  // Wrap fetchWindData in useCallback
+  const fetchWindData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -42,7 +42,7 @@ const DroneWindAnalysis = () => {
         });
       } else {
         data = await fetchNWSForecast(location.latitude, location.longitude);
-        toast.success("Wind data fetched successfully!");
+        
       }
       
       const filteredData = filterDaylightHours(data);
@@ -50,7 +50,7 @@ const DroneWindAnalysis = () => {
     } catch (err) {
       console.error("Error fetching wind data:", err);
       setError(err as Error);
-      toast.error("Failed to fetch wind data.");
+      
       
       if (useMockData || confirm("Would you like to use mock data instead?")) {
         const mockData = generateMockWindData();
@@ -65,7 +65,19 @@ const DroneWindAnalysis = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [location, useMockData]); // Include dependencies used inside the callback
+  
+  // Now useEffect can safely include fetchWindData as a dependency
+  useEffect(() => {
+    fetchWindData();
+    
+    // Set up automatic refresh interval (every 30 minutes)
+    const refreshInterval = setInterval(() => {
+      fetchWindData();
+    }, 30 * 60 * 1000);
+    
+    return () => clearInterval(refreshInterval);
+  }, [fetchWindData]); // fetchWindData already depends on location and useMockData
 
   // Handle location change
   const handleLocationChange = (lat: number, lon: number) => {
@@ -82,7 +94,7 @@ const DroneWindAnalysis = () => {
     }, 30 * 60 * 1000);
     
     return () => clearInterval(refreshInterval);
-  }, [location, useMockData]);
+  }, [location, useMockData, fetchWindData]);
   
   // Use the station data hook to enhance our wind data with gusts
   const { 
