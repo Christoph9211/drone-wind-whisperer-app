@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import WindSpeedChart from '@/components/WindSpeedChart';
+import GoogleWindChart from '@/components/GoogleWindChart';
 import WindDataTable from '@/components/WindDataTable';
 import LocationInput from '@/components/LocationInput';
 import SafetyIndicator from '@/components/SafetyIndicator';
@@ -26,6 +27,7 @@ const DroneWindAnalysis = () => {
   const [showMph, setShowMph] = useState(false);
   const [useEstimation, setUseEstimation] = useState(true);
   const [useMockData, setUseMockData] = useState(false);
+  const [useGoogleChart, setUseGoogleChart] = useState(false);
   
   // Wrap fetchWindData in useCallback
   const fetchWindData = useCallback(async () => {
@@ -65,7 +67,7 @@ const DroneWindAnalysis = () => {
     } finally {
       setLoading(false);
     }
-  }, [location, useMockData]); // Include dependencies used inside the callback
+  }, [location, useMockData]); 
   
   // Now useEffect can safely include fetchWindData as a dependency
   useEffect(() => {
@@ -83,18 +85,6 @@ const DroneWindAnalysis = () => {
   const handleLocationChange = (lat: number, lon: number) => {
     setLocation({ latitude: lat, longitude: lon });
   };
-  
-  // Fetch data on mount and when location changes
-  useEffect(() => {
-    fetchWindData();
-    
-    // Set up automatic refresh interval (every 30 minutes)
-    const refreshInterval = setInterval(() => {
-      fetchWindData();
-    }, 30 * 60 * 1000);
-    
-    return () => clearInterval(refreshInterval);
-  }, [location, useMockData, fetchWindData]);
   
   // Use the station data hook to enhance our wind data with gusts
   const { 
@@ -167,9 +157,13 @@ const DroneWindAnalysis = () => {
                       <TabsList>
                         <TabsTrigger value="chart">Chart View</TabsTrigger>
                         <TabsTrigger value="table">Table View</TabsTrigger>
+                        <TabsTrigger value="google-chart">Google Chart</TabsTrigger>
                       </TabsList>
                       <TabsContent value="chart" className="mt-4">
                         <WindSpeedChart windData={enhancedData} showMph={showMph} />
+                      </TabsContent>
+                      <TabsContent value="google-chart" className="mt-4">
+                        <GoogleWindChart windData={enhancedData} showMph={showMph} />
                       </TabsContent>
                       <TabsContent value="table" className="mt-4">
                         <WindDataTable windData={enhancedData} />
