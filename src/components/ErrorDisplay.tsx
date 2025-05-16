@@ -5,9 +5,11 @@ import { AlertCircle } from "lucide-react";
 interface ErrorDisplayProps {
   error: Error | string;
   onRetry?: () => void;
+  actionText?: string;
+  onAction?: () => void;
 }
 
-const ErrorDisplay = ({ error, onRetry }: ErrorDisplayProps) => {
+const ErrorDisplay = ({ error, onRetry, actionText, onAction }: ErrorDisplayProps) => {
   const errorMessage = typeof error === 'string' ? error : error.message;
   
   return (
@@ -17,14 +19,24 @@ const ErrorDisplay = ({ error, onRetry }: ErrorDisplayProps) => {
       <AlertDescription>
         <div className="mt-2">
           {errorMessage}
-          {onRetry && (
-            <button 
-              onClick={onRetry}
-              className="ml-4 underline hover:text-red-700"
-            >
-              Retry
-            </button>
-          )}
+          <div className="mt-2 space-x-3">
+            {onRetry && (
+              <button 
+                onClick={onRetry}
+                className="underline hover:text-red-700"
+              >
+                Retry
+              </button>
+            )}
+            {onAction && actionText && (
+              <button 
+                onClick={onAction}
+                className="underline hover:text-red-700"
+              >
+                {actionText}
+              </button>
+            )}
+          </div>
         </div>
       </AlertDescription>
     </Alert>
