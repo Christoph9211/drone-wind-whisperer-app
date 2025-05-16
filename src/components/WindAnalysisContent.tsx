@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import WindSpeedChart from '@/components/WindSpeedChart';
 import GoogleWindChart from '@/components/GoogleWindChart';
 import WindDataTable from '@/components/WindDataTable';
+import WindMap from '@/components/WindMap';
 import SafetyIndicator from '@/components/SafetyIndicator';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { WindData } from '@/utils/weatherApi';
@@ -13,12 +14,14 @@ interface WindAnalysisContentProps {
   loading: boolean;
   windData: WindData[];
   nearestStation: { name: string } | null;
+  location: { latitude: number; longitude: number };
 }
 
 const WindAnalysisContent = ({ 
   loading,
   windData,
-  nearestStation
+  nearestStation,
+  location
 }: WindAnalysisContentProps) => {
   const [showMph, setShowMph] = useState(false);
   
@@ -60,6 +63,7 @@ const WindAnalysisContent = ({
           <TabsList>
             <TabsTrigger value="chart">Chart View</TabsTrigger>
             <TabsTrigger value="table">Table View</TabsTrigger>
+            <TabsTrigger value="map">Map View</TabsTrigger>
             <TabsTrigger value="google-chart">Google Chart</TabsTrigger>
           </TabsList>
           <TabsContent value="chart" className="mt-4">
@@ -70,6 +74,9 @@ const WindAnalysisContent = ({
           </TabsContent>
           <TabsContent value="table" className="mt-4">
             <WindDataTable windData={windData} />
+          </TabsContent>
+          <TabsContent value="map" className="mt-4">
+            <WindMap windData={windData} showMph={showMph} location={location} />
           </TabsContent>
         </Tabs>
       </div>

@@ -65,6 +65,7 @@ const DroneWindAnalysis = () => {
                 loading={loading || stationLoading}
                 windData={enhancedData}
                 nearestStation={nearestStation}
+                location={location}
               />
             </div>
             
