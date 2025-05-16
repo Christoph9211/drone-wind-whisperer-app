@@ -1,6 +1,6 @@
 
 import ErrorDisplay from '@/components/ErrorDisplay';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface WindDataErrorProps {
   error: Error | null;

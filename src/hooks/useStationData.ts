@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { 
   fetchNearbyStations, 
   fetchStationObservations,
@@ -55,8 +55,7 @@ export const useStationData = ({
             setEnhancedData(estimateWindGusts(forecastData));
             toast({
               title: "Using estimated gust data",
-              description: "No nearby weather stations found. Using wind gust estimation algorithm.",
-              variant: "default",
+              description: "No nearby weather stations found. Using wind gust estimation algorithm."
             });
           }
           setLoading(false);
@@ -82,8 +81,7 @@ export const useStationData = ({
             setEnhancedData(estimateWindGusts(forecastData));
             toast({
               title: "Using estimated gust data",
-              description: `No observation data from ${stationName}. Using wind gust estimation algorithm.`,
-              variant: "default",
+              description: `No observation data from ${stationName}. Using wind gust estimation algorithm.`
             });
           }
           setLoading(false);
@@ -101,8 +99,7 @@ export const useStationData = ({
         setEnhancedData(finalData);
         toast({
           title: "Wind gust data added",
-          description: `Added gust data from ${stationName} weather station.`,
-          variant: "default",
+          description: `Added gust data from ${stationName} weather station.`
         });
         
       } catch (err) {
@@ -114,8 +111,7 @@ export const useStationData = ({
           setEnhancedData(estimateWindGusts(forecastData));
           toast({
             title: "Using estimated gust data",
-            description: "Error fetching station data. Using wind gust estimation algorithm.",
-            variant: "default",
+            description: "Error fetching station data. Using wind gust estimation algorithm."
           });
         }
       } finally {
