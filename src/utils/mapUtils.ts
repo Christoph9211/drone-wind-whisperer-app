@@ -30,14 +30,14 @@ export const createWindVectorData = (
   const endLat = latitude + Math.sin(directionRad) * windSpeed * scale;
   
   return {
-    type: 'Feature',
+    type: "Feature" as const, // Fix: Use "Feature" as a literal type
     properties: {
       windSpeed: windSpeed,
       windDirection: data.windDirection || 0,
       isSafe: windSpeed <= MAX_SAFE_WIND
     },
     geometry: {
-      type: 'LineString',
+      type: "LineString" as const, // Fix: Use "LineString" as a literal type
       coordinates: [
         [longitude, latitude],
         [endLng, endLat]
