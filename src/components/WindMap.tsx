@@ -15,6 +15,7 @@ interface WindMapProps {
 const WindMap = ({ windData, location }: WindMapProps) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedHeight, setSelectedHeight] = useState(ANALYSIS_HEIGHTS[0]);
   const [mapboxToken, setMapboxToken] = useState('');
@@ -69,13 +70,15 @@ const WindMap = ({ windData, location }: WindMapProps) => {
       selectedHeight
     );
 
-    // Add a marker at the current location
-    if (!map.current.getLayer('location-marker')) {
-      new mapboxgl.Marker({
+    // Add or update a marker at the current location
+    if (!markerRef.current) {
+      markerRef.current = new mapboxgl.Marker({
         color: "#ffffff"
       })
         .setLngLat([location.longitude, location.latitude])
         .addTo(map.current);
+    } else {
+      markerRef.current.setLngLat([location.longitude, location.latitude]);
     }
   };
 
