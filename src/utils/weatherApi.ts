@@ -327,3 +327,69 @@ export const generateMockWindData = (): WindData[] => {
   return data;
 };
 
+// ---------------- Regional Wind Utilities ----------------
+
+export interface CurrentWindPoint {
+  latitude: number;
+  longitude: number;
+  windSpeed: number; // m/s
+  windDirection: number;
+}
+
+/**
+ * Fetch current wind speed and direction for a location using Open-Meteo
+ */
+export const fetchCurrentWind = async (
+  latitude: number,
+  longitude: number
+): Promise<CurrentWindPoint | null> => {
+  try {
+    const resp = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`
+    );
+
+    if (!resp.ok) {
+      throw new Error(`Open-Meteo error: ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const weather = data.current_weather;
+    if (!weather) return null;
+
+    // Open-Meteo returns windspeed in km/h, convert to m/s
+    const windSpeedMs = weather.windspeed / 3.6;
+
+    return {
+      latitude,
+      longitude,
+      windSpeed: windSpeedMs,
+      windDirection: weather.winddirection
+    };
+  } catch (error) {
+    console.error('Error fetching current wind:', error);
+    return null;
+  }
+};
+
+/**
+ * Fetch a grid of current wind data around a central location
+ */
+export const fetchRegionalWindGrid = async (
+  centerLat: number,
+  centerLon: number,
+  range: number = 1,
+  step: number = 0.5
+): Promise<CurrentWindPoint[]> => {
+  const half = range / 2;
+  const points: Promise<CurrentWindPoint | null>[] = [];
+
+  for (let lat = centerLat - half; lat <= centerLat + half; lat += step) {
+    for (let lon = centerLon - half; lon <= centerLon + half; lon += step) {
+      points.push(fetchCurrentWind(lat, lon));
+    }
+  }
+
+  const results = await Promise.all(points);
+  return results.filter((p): p is CurrentWindPoint => p !== null);
+};
+
