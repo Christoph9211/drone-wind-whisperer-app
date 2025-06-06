@@ -2,9 +2,9 @@
 import { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { WindData } from '@/utils/weatherApi';
+import { WindData, fetchRegionalWindGrid, CurrentWindPoint } from '@/utils/weatherApi';
 import { ANALYSIS_HEIGHTS } from '@/utils/constants';
-import { addWindVectorLayer, initializeWindMap } from '@/utils/mapUtils';
+import { addWindVectorLayer, addRegionalWindLayer, initializeWindMap } from '@/utils/mapUtils';
 
 interface WindMapProps {
   windData: WindData[];
@@ -21,6 +21,7 @@ const WindMap = ({ windData, location }: WindMapProps) => {
   const [mapboxToken, setMapboxToken] = useState('');
   const [showTokenInput, setShowTokenInput] = useState(true);
   const [mapStyle, setMapStyle] = useState('satellite-v9');
+  const [regionalWind, setRegionalWind] = useState<CurrentWindPoint[]>([]);
 
   // Set Mapbox token
   const handleTokenSubmit = (e: React.FormEvent) => {
@@ -70,6 +71,11 @@ const WindMap = ({ windData, location }: WindMapProps) => {
       selectedHeight
     );
 
+    // Add regional wind overlay
+    if (regionalWind.length) {
+      addRegionalWindLayer(map.current, regionalWind);
+    }
+
     // Add or update a marker at the current location
     if (!markerRef.current) {
       markerRef.current = new mapboxgl.Marker({
@@ -116,7 +122,17 @@ const WindMap = ({ windData, location }: WindMapProps) => {
   // Effect to update wind layer when data or selected height changes
   useEffect(() => {
     updateWindLayer();
-  }, [windData, selectedHeight, mapLoaded]);
+  }, [windData, selectedHeight, mapLoaded, regionalWind]);
+
+  // Fetch regional wind data when map loads or location changes
+  useEffect(() => {
+    if (!mapLoaded) return;
+    const fetchData = async () => {
+      const grid = await fetchRegionalWindGrid(location.latitude, location.longitude);
+      setRegionalWind(grid);
+    };
+    fetchData();
+  }, [mapLoaded, location]);
 
   // Get current wind data for display
   const currentWindData = windData.length > 0 ? windData[0] : null;

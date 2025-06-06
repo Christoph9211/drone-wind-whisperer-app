@@ -199,3 +199,73 @@ export const initializeWindMap = (
     onLoad();
   });
 };
+
+/**
+ * Add an overlay of wind vectors across a region
+ */
+export interface RegionalWindPoint {
+  latitude: number;
+  longitude: number;
+  windSpeed: number;
+  windDirection: number;
+}
+
+export const addRegionalWindLayer = (
+  map: mapboxgl.Map,
+  points: RegionalWindPoint[]
+) => {
+  if (!map || points.length === 0) return;
+
+  // Remove existing regional layers
+  if (map.getSource('regional-wind')) {
+    map.removeLayer('regional-wind');
+    map.removeLayer('regional-wind-heads');
+    map.removeSource('regional-wind');
+  }
+
+  const features = points.map(p => {
+    const data: WindData = {
+      timestamp: new Date(),
+      windSpeed: p.windSpeed,
+      windDirection: p.windDirection,
+      isDaytime: true
+    };
+
+    return createWindVectorData(data, p.latitude, p.longitude, 10);
+  });
+
+  map.addSource('regional-wind', {
+    type: 'geojson',
+    data: {
+      type: 'FeatureCollection',
+      features
+    }
+  });
+
+  map.addLayer({
+    id: 'regional-wind',
+    type: 'line',
+    source: 'regional-wind',
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: {
+      'line-color': '#0ea5e9',
+      'line-width': 2
+    }
+  });
+
+  map.addLayer({
+    id: 'regional-wind-heads',
+    type: 'symbol',
+    source: 'regional-wind',
+    layout: {
+      'symbol-placement': 'point',
+      'symbol-spacing': 1,
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+      'icon-image': 'arrow',
+      'icon-size': 0.6,
+      'icon-rotate': ['get', 'windDirection'],
+      'icon-anchor': 'center'
+    }
+  });
+};
