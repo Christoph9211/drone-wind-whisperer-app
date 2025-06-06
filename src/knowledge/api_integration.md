@@ -126,3 +126,22 @@ export interface WindData {
   isDaytime: boolean;    // Whether it's daytime according to NWS
 }
 ```
+
+## Open-Meteo Integration
+
+To complement the NWS data, the application now queries the free
+[Open-Meteo](https://open-meteo.com/) API. This service provides hourly wind
+forecasts with gust information worldwide. Gust values are merged with the NWS
+forecast when available.
+
+```typescript
+export const fetchOpenMeteoForecast = async (
+  latitude: number,
+  longitude: number
+): Promise<WindData[]> => { /* ... */ };
+
+export const mergeForecastWithGusts = (
+  primary: WindData[],
+  gustSource: WindData[]
+): WindData[] => { /* ... */ };
+```

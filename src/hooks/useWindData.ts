@@ -1,11 +1,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "@/hooks/use-toast";
-import { 
-  fetchNWSForecast, 
-  filterDaylightHours, 
-  WindData, 
-  generateMockWindData 
+import {
+  fetchNWSForecast,
+  fetchOpenMeteoForecast,
+  mergeForecastWithGusts,
+  filterDaylightHours,
+  WindData,
+  generateMockWindData
 } from '@/utils/weatherApi';
 import { DEFAULT_LOCATION } from '@/utils/constants';
 
@@ -37,9 +39,16 @@ export const useWindData = ({ initialUseMockData = false }: UseWindDataProps = {
           description: "Real API data is not being used."
         });
       } else {
-        data = await fetchNWSForecast(location.latitude, location.longitude);
+        const nws = await fetchNWSForecast(location.latitude, location.longitude);
+        try {
+          const meteo = await fetchOpenMeteoForecast(location.latitude, location.longitude);
+          data = mergeForecastWithGusts(nws, meteo);
+        } catch (apiErr) {
+          console.error("Error fetching Open-Meteo data:", apiErr);
+          data = nws;
+        }
       }
-      
+
       const filteredData = filterDaylightHours(data);
       setWindData(filteredData);
     } catch (err) {

@@ -1,6 +1,6 @@
 
 
-import { mphToMs } from './windCalculations';
+import { mphToMs, kmhToMs } from './windCalculations';
 
 // Constants for the API endpoint
 const NWS_API_BASE_URL = 'https://api.weather.gov';
@@ -325,6 +325,71 @@ export const generateMockWindData = (): WindData[] => {
   }
   
   return data;
+};
+
+// ---------------- Additional Forecast Source ----------------
+
+/**
+ * Fetch hourly forecast including wind gusts from Open-Meteo
+ */
+export const fetchOpenMeteoForecast = async (
+  latitude = DEFAULT_LOCATION.latitude,
+  longitude = DEFAULT_LOCATION.longitude
+): Promise<WindData[]> => {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m&forecast_days=2&timezone=UTC`;
+    const resp = await fetch(url);
+
+    if (!resp.ok) {
+      throw new Error(`Open-Meteo error: ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const times: string[] = data.hourly.time;
+    const speeds: number[] = data.hourly.wind_speed_10m;
+    const dirs: number[] = data.hourly.wind_direction_10m;
+    const gusts: number[] = data.hourly.wind_gusts_10m;
+
+    const windData: WindData[] = times.map((t, idx) => ({
+      timestamp: new Date(t),
+      windSpeed: kmhToMs(speeds[idx]),
+      windDirection: dirs[idx],
+      windGust: gusts[idx] != null ? kmhToMs(gusts[idx]) : undefined,
+      isDaytime: isDaylight(new Date(t))
+    }));
+
+    return windData;
+  } catch (error) {
+    console.error('Error fetching Open-Meteo forecast:', error);
+    throw error;
+  }
+};
+
+/**
+ * Merge gust data from a secondary source with primary forecast
+ */
+export const mergeForecastWithGusts = (
+  primary: WindData[],
+  gustSource: WindData[]
+): WindData[] => {
+  const gustMap = new Map<string, number>();
+  gustSource.forEach((d) => {
+    if (d.windGust !== undefined) {
+      const ts = new Date(d.timestamp);
+      const key = `${ts.getUTCFullYear()}-${ts.getUTCMonth()}-${ts.getUTCDate()}-${ts.getUTCHours()}`;
+      gustMap.set(key, d.windGust);
+    }
+  });
+
+  return primary.map((p) => {
+    const ts = new Date(p.timestamp);
+    const key = `${ts.getUTCFullYear()}-${ts.getUTCMonth()}-${ts.getUTCDate()}-${ts.getUTCHours()}`;
+    const gust = gustMap.get(key);
+    if (gust !== undefined) {
+      return { ...p, windGust: gust };
+    }
+    return p;
+  });
 };
 
 // ---------------- Regional Wind Utilities ----------------

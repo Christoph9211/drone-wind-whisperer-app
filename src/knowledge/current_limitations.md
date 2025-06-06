@@ -10,6 +10,8 @@ The National Weather Service API does not provide wind gust data in the hourly f
 Potential solutions:
 - Explore alternative endpoints that might include gust data
 - Consider integrating with additional weather APIs that provide this information
+- The application now includes an integration with the free Open-Meteo API to
+  retrieve gust forecasts when NWS data lacks this field
 - Implement estimation algorithms to predict gust behavior based on steady wind patterns
 
 ### Geographic Coverage
