@@ -17,6 +17,13 @@ export const mphToMs = (mph: number): number => {
 };
 
 /**
+ * Convert wind speed from km/h to m/s
+ * @param kmh Wind speed in kilometers per hour
+ * @returns Wind speed in meters per second
+ */
+export const kmhToMs = (kmh: number): number => kmh / 3.6;
+
+/**
  * Convert wind speed from m/s to mph
  * @param ms Wind speed in meters per second
  * @returns Wind speed in miles per hour
