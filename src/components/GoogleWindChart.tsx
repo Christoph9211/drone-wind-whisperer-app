@@ -26,6 +26,7 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
   const [showGusts, setShowGusts] = useState(true);
   const [isLibLoaded, setIsLibLoaded] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [chartId] = useState(`wind-chart-${Math.random().toString(36).substr(2, 9)}`);
 
   // Load Google Charts library
   useEffect(() => {
@@ -63,6 +64,13 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
       // Cleanup if needed
     };
   }, []);
+
+  // Set chart container ID
+  useEffect(() => {
+    if (chartRef.current) {
+      chartRef.current.id = chartId;
+    }
+  }, [chartId]);
 
   const drawChart = useCallback(() => {
     const google = window.google;
@@ -162,8 +170,7 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
         }
       },
       crosshair: { 
-        trigger: 'both',
-        orientation: 'vertical'
+        trigger: 'both'
       },
       explorer: {
         actions: ['dragToZoom', 'rightClickToReset'],
@@ -173,41 +180,16 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
       }
     };
     
-    // Create and draw the chart
-    const chart = new google.visualization.LineChart(chartRef.current);
+    // Create and draw the chart using the chart ID
+    const chart = new google.visualization.LineChart(document.getElementById(chartId));
     
     chart.draw(dataTable, options);
-    
-    // Add safety threshold reference lines
-    const safetyData = new google.visualization.DataTable();
-    safetyData.addColumn('string', 'Label');
-    safetyData.addColumn('number', 'Value');
-    safetyData.addRows([
-      ['Max Safe Wind', safeWindThreshold],
-      ['Max Safe Gust', safeGustThreshold]
-    ]);
-    
-    // Draw safety threshold lines after the main chart
-    const view = new google.visualization.DataView(dataTable);
-    const chartWrapper = new google.visualization.ChartWrapper({
-      chartType: 'LineChart',
-      containerId: chartRef.current,
-      dataTable: view,
-      options: {
-        ...options,
-        series: {
-          ...options.series,
-          7: { color: 'red', enableInteractivity: false, lineWidth: 1, lineDashStyle: [4, 4] },
-          8: { color: 'orange', enableInteractivity: false, lineWidth: 1, lineDashStyle: [4, 4] }
-        }
-      }
-    });
     
     // Add event listener for interactivity if needed
     google.visualization.events.addListener(chart, 'ready', () => {
       // Add custom annotations or additional features here if needed
     });
-  }, [windData, showMph, showGusts]);
+  }, [windData, showMph, showGusts, chartId]);
 
   useEffect(() => {
     if (!isLibLoaded || !chartRef.current || !windData.length) return;
