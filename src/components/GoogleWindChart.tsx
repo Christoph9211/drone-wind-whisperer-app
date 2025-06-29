@@ -140,8 +140,8 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
         bold: true,
       },
       height: 400,
-      curveType: 'function',
-      legend: { position: 'bottom' },
+      curveType: 'function' as const,
+      legend: { position: 'bottom' as const },
       hAxis: {
         title: 'Time',
         textStyle: {
@@ -164,17 +164,17 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
         6: { color: '#ff0000', lineDashStyle: [5, 5] } // Wind Gusts
       },
       annotations: {
-        style: 'line',
+        style: 'line' as const,
         stem: {
           color: 'transparent',
         }
       },
       crosshair: { 
-        trigger: 'both'
+        trigger: 'both' as const
       },
       explorer: {
         actions: ['dragToZoom', 'rightClickToReset'],
-        axis: 'horizontal',
+        axis: 'horizontal' as const,
         keepInBounds: true,
         maxZoomIn: 0.1
       }
