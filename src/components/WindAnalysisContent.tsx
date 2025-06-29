@@ -6,6 +6,7 @@ import WindSpeedChart from '@/components/WindSpeedChart';
 import GoogleWindChart from '@/components/GoogleWindChart';
 import WindDataTable from '@/components/WindDataTable';
 import WindMap from '@/components/WindMap';
+import EnhancedWindMap from '@/components/EnhancedWindMap';
 import SafetyIndicator from '@/components/SafetyIndicator';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { WindData } from '@/utils/weatherApi';
@@ -59,13 +60,17 @@ const WindAnalysisContent = ({
           </div>
         </div>
         
-        <Tabs defaultValue="chart">
+        <Tabs defaultValue="enhanced-map">
           <TabsList>
+            <TabsTrigger value="enhanced-map">Enhanced Map</TabsTrigger>
             <TabsTrigger value="chart">Chart View</TabsTrigger>
             <TabsTrigger value="table">Table View</TabsTrigger>
-            <TabsTrigger value="map">Map View</TabsTrigger>
+            <TabsTrigger value="map">Basic Map</TabsTrigger>
             <TabsTrigger value="google-chart">Google Chart</TabsTrigger>
           </TabsList>
+          <TabsContent value="enhanced-map" className="mt-4">
+            <EnhancedWindMap windData={windData} location={location} />
+          </TabsContent>
           <TabsContent value="chart" className="mt-4">
             <WindSpeedChart windData={windData} showMph={showMph} />
           </TabsContent>
