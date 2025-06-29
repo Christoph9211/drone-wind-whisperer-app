@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { WindData } from '@/utils/weatherApi';
 import { MAX_SAFE_WIND, MAX_SAFE_GUST, estimateWindAtHeight, msToMph } from '@/utils/windCalculations';
 import LoadingSpinner from './LoadingSpinner';
