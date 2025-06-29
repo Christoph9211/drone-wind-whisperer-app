@@ -11,7 +11,13 @@ interface GoogleWindChartProps {
 
 declare global {
   interface Window {
-    google: any;
+    google: {
+      charts?: {
+        load: (version: string, settings: { packages: string[] }) => void
+        setOnLoadCallback: (callback: () => void) => void
+      }
+      visualization?: Record<string, unknown>
+    }
   }
 }
 
@@ -58,20 +64,7 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
     };
   }, []);
 
-  // Draw chart when data or library changes
-  useEffect(() => {
-    if (!isLibLoaded || !chartRef.current || !windData.length) return;
-    
-    try {
-      drawChart();
-    } catch (err) {
-      console.error("Error drawing chart:", err);
-      setError(err as Error);
-    }
-  }, [windData, isLibLoaded, showMph, showGusts]);
-
-  // Function to draw the chart
-  const drawChart = () => {
+  const drawChart = useCallback(() => {
     const google = window.google;
     if (!google || !google.visualization) return;
 
@@ -214,7 +207,18 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
     google.visualization.events.addListener(chart, 'ready', () => {
       // Add custom annotations or additional features here if needed
     });
-  };
+  }, [windData, showMph, showGusts]);
+
+  useEffect(() => {
+    if (!isLibLoaded || !chartRef.current || !windData.length) return;
+
+    try {
+      drawChart();
+    } catch (err) {
+      console.error("Error drawing chart:", err);
+      setError(err as Error);
+    }
+  }, [isLibLoaded, windData, drawChart]);
 
   if (error) {
     return (
