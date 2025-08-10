@@ -23,6 +23,7 @@ declare global {
 
 const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) => {
   const chartRef = useRef<HTMLDivElement>(null);
+  const chartContainerIdRef = useRef<string>(`google-wind-chart-${Math.random().toString(36).slice(2)}`);
   const [showGusts, setShowGusts] = useState(true);
   const [isLibLoaded, setIsLibLoaded] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -125,7 +126,7 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
     const safeGustThreshold = showMph ? msToMph(MAX_SAFE_GUST) : MAX_SAFE_GUST;
     
     // Chart options
-    const options = {
+    const options: any = {
       title: 'Wind Speed Analysis',
       titleTextStyle: {
         fontSize: 18,
@@ -172,40 +173,15 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
         maxZoomIn: 0.1
       }
     };
-    
+
     // Create and draw the chart
     const chart = new google.visualization.LineChart(chartRef.current);
     
     chart.draw(dataTable, options);
     
-    // Add safety threshold reference lines
-    const safetyData = new google.visualization.DataTable();
-    safetyData.addColumn('string', 'Label');
-    safetyData.addColumn('number', 'Value');
-    safetyData.addRows([
-      ['Max Safe Wind', safeWindThreshold],
-      ['Max Safe Gust', safeGustThreshold]
-    ]);
-    
-    // Draw safety threshold lines after the main chart
-    const view = new google.visualization.DataView(dataTable);
-    const chartWrapper = new google.visualization.ChartWrapper({
-      chartType: 'LineChart',
-      containerId: chartRef.current,
-      dataTable: view,
-      options: {
-        ...options,
-        series: {
-          ...options.series,
-          7: { color: 'red', enableInteractivity: false, lineWidth: 1, lineDashStyle: [4, 4] },
-          8: { color: 'orange', enableInteractivity: false, lineWidth: 1, lineDashStyle: [4, 4] }
-        }
-      }
-    });
-    
-    // Add event listener for interactivity if needed
+    // Interactivity hook (optional)
     google.visualization.events.addListener(chart, 'ready', () => {
-      // Add custom annotations or additional features here if needed
+      // Custom annotations or additional features can be added here
     });
   }, [windData, showMph, showGusts]);
 
@@ -248,7 +224,7 @@ const GoogleWindChart = ({ windData, showMph = false }: GoogleWindChartProps) =>
         </div>
       </div>
       
-      <div ref={chartRef} className="h-[400px] w-full" />
+      <div ref={chartRef} id={chartContainerIdRef.current} className="h-[400px] w-full" />
       
       {windData.some(d => d.windGust !== undefined) && (
         <div className="flex items-center mt-2">

@@ -5,6 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { WindData, fetchRegionalWindGrid, CurrentWindPoint } from '@/utils/weatherApi';
 import { ANALYSIS_HEIGHTS } from '@/utils/constants';
 import { addWindVectorLayer, addRegionalWindLayer, initializeWindMap } from '@/utils/mapUtils';
+import { estimateWindAtHeight, isSafeForDrones } from '@/utils/windCalculations';
 
 interface WindMapProps {
   windData: WindData[];
@@ -18,6 +19,7 @@ const WindMap = ({ windData, location }: WindMapProps) => {
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedHeight, setSelectedHeight] = useState(ANALYSIS_HEIGHTS[0]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [mapboxToken, setMapboxToken] = useState('');
   const [showTokenInput, setShowTokenInput] = useState(true);
   const [mapStyle, setMapStyle] = useState('satellite-v9');
@@ -68,7 +70,8 @@ const WindMap = ({ windData, location }: WindMapProps) => {
       windData,
       location.latitude,
       location.longitude,
-      selectedHeight
+      selectedHeight,
+      selectedIndex
     );
 
     // Add regional wind overlay
@@ -122,7 +125,7 @@ const WindMap = ({ windData, location }: WindMapProps) => {
   // Effect to update wind layer when data or selected height changes
   useEffect(() => {
     updateWindLayer();
-  }, [windData, selectedHeight, mapLoaded, regionalWind]);
+  }, [windData, selectedHeight, selectedIndex, mapLoaded, regionalWind]);
 
   // Fetch regional wind data when map loads or location changes
   useEffect(() => {
@@ -135,7 +138,15 @@ const WindMap = ({ windData, location }: WindMapProps) => {
   }, [mapLoaded, location]);
 
   // Get current wind data for display
-  const currentWindData = windData.length > 0 ? windData[0] : null;
+  const currentWindData = windData.length > 0 ? windData[selectedIndex] : null;
+  const currentSpeedAtHeight = currentWindData
+    ? (selectedHeight === 10
+        ? currentWindData.windSpeed
+        : estimateWindAtHeight(currentWindData.windSpeed, 10, selectedHeight))
+    : null;
+  const goNoGo = currentWindData && currentSpeedAtHeight !== null
+    ? isSafeForDrones(currentSpeedAtHeight, currentWindData.windGust)
+    : null;
 
   return (
     <div className="relative h-[500px] w-full rounded-lg overflow-hidden">
@@ -176,6 +187,21 @@ const WindMap = ({ windData, location }: WindMapProps) => {
       
       {/* Map controls */}
       <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-md shadow-md p-3 space-y-3">
+        <div className="flex flex-col space-y-1">
+          <label className="text-sm font-medium">Time:</label>
+          <input
+            type="range"
+            min={0}
+            max={Math.max(0, windData.length - 1)}
+            value={selectedIndex}
+            onChange={(e) => setSelectedIndex(Number(e.target.value))}
+            className="w-64"
+          />
+          <div className="text-xs">
+            {currentWindData ? currentWindData.timestamp.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: '2-digit' }) : '--'}
+          </div>
+        </div>
+
         <div className="flex flex-col space-y-1">
           <label className="text-sm font-medium">Height:</label>
           <select

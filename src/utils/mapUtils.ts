@@ -54,7 +54,8 @@ export const addWindVectorLayer = (
   data: WindData[],
   latitude: number,
   longitude: number,
-  height: number
+  height: number,
+  index: number = 0
 ) => {
   if (!map || data.length === 0) return;
   
@@ -70,8 +71,12 @@ export const addWindVectorLayer = (
     map.removeSource('wind-circle');
   }
   
+  if (map.getSource('gust-halo')) {
+    map.removeLayer('gust-halo');
+    map.removeSource('gust-halo');
+  }
   // Get the current/most recent wind data
-  const currentData = data[0];
+  const currentData = data[index] || data[0];
   
   // Create wind vector
   const vectorData = createWindVectorData(currentData, latitude, longitude, height);
@@ -112,6 +117,30 @@ export const addWindVectorLayer = (
       ]
     }
   });
+  
+  // Gust uncertainty halo (if gust data available)
+  if (currentData.windGust && currentData.windGust > currentData.windSpeed) {
+    const delta = currentData.windGust - currentData.windSpeed;
+    const haloRadius = Math.max(60, Math.min(120, 60 + delta * 15));
+    map.addSource('gust-halo', {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        properties: { haloRadius },
+        geometry: { type: 'Point', coordinates: [longitude, latitude] }
+      }
+    });
+    map.addLayer({
+      id: 'gust-halo',
+      type: 'circle',
+      source: 'gust-halo',
+      paint: {
+        'circle-radius': haloRadius,
+        'circle-opacity': 0.25,
+        'circle-color': '#f59e0b'
+      }
+    });
+  }
   
   // Add vector line
   map.addSource('wind-vectors', {
