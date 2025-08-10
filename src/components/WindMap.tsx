@@ -6,6 +6,7 @@ import { WindData, fetchRegionalWindGrid, CurrentWindPoint } from '@/utils/weath
 import { ANALYSIS_HEIGHTS } from '@/utils/constants';
 import { addWindVectorLayer, addRegionalWindLayer, initializeWindMap } from '@/utils/mapUtils';
 import { estimateWindAtHeight, isSafeForDrones } from '@/utils/windCalculations';
+import WindParticlesCanvas from '@/components/WindParticlesCanvas';
 
 interface WindMapProps {
   windData: WindData[];
@@ -24,6 +25,7 @@ const WindMap = ({ windData, location }: WindMapProps) => {
   const [showTokenInput, setShowTokenInput] = useState(true);
   const [mapStyle, setMapStyle] = useState('satellite-v9');
   const [regionalWind, setRegionalWind] = useState<CurrentWindPoint[]>([]);
+  const [particlesEnabled, setParticlesEnabled] = useState(true);
 
   // Set Mapbox token
   const handleTokenSubmit = (e: React.FormEvent) => {
@@ -185,6 +187,14 @@ const WindMap = ({ windData, location }: WindMapProps) => {
       
       <div ref={mapContainer} className="h-full w-full" />
       
+      {/* Particle flow overlay */}
+      <WindParticlesCanvas
+        map={map.current}
+        points={regionalWind}
+        height={selectedHeight}
+        enabled={particlesEnabled}
+      />
+      
       {/* Map controls */}
       <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-md shadow-md p-3 space-y-3">
         <div className="flex flex-col space-y-1">
@@ -230,6 +240,16 @@ const WindMap = ({ windData, location }: WindMapProps) => {
             <option value="light-v10">Light</option>
             <option value="dark-v10">Dark</option>
           </select>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <input
+            id="toggle-particles"
+            type="checkbox"
+            checked={particlesEnabled}
+            onChange={(e) => setParticlesEnabled(e.target.checked)}
+          />
+          <label htmlFor="toggle-particles" className="text-sm font-medium">Particle flow</label>
         </div>
         
         {currentWindData && (
